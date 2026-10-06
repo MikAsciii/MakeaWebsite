@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Syne', sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Creamy / Bone-white & Crimson Palette */
+  --color-canvas: #F5F2EB;
+  --color-surface: #FAF8F5;
+  --color-surface-raised: #EDE7DC;
+  --color-border-subtle: #E2DACF;
+  
+  --color-crimson: #E61E38;
+  --color-crimson-dark: #C4142B;
+  --color-crimson-light: #FF3B53;
+  --color-obsidian: #121318;
+  --color-slate-text: #5A5852;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F5F2EB;
+  color: #14151A;
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: 'Syne', sans-serif;
+}
+
+.font-editorial {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+.font-mono-code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom clean bone-tone scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #EBE5DB;
+}
+::-webkit-scrollbar-thumb {
+  background: #CFC5B6;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E61E38;
+}
+
+.writing-vertical-lr {
+  writing-mode: vertical-lr;
+}
+
+/* 3D Carousel Utilities */
+.perspective-1200 {
+  perspective: 1200px;
+}
+.perspective-1600 {
+  perspective: 1600px;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Painterly Fine Canvas & Paper Texture */
+.canvas-grain {
+  background-image: radial-gradient(rgba(20, 21, 26, 0.04) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.painterly-card-shadow {
+  box-shadow: 
+    0 1px 3px rgba(20, 21, 26, 0.05),
+    0 10px 25px -5px rgba(20, 21, 26, 0.08),
+    0 20px 48px -12px rgba(20, 21, 26, 0.12);
+}
+
+.painterly-brush-accent {
+  position: relative;
+}
+.painterly-brush-accent::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #E61E38 0%, #C4142B 70%, transparent 100%);
+  border-radius: 2px;
+}
