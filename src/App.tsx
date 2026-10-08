@@ -6,13 +6,35 @@ import { ExhibitionsList } from './components/ExhibitionsList';
 import { AtelierAndContact } from './components/AtelierAndContact';
 import { ArtworkDossierModal } from './components/ArtworkDossierModal';
 import { ResumeModal } from './components/ResumeModal';
+import { ArticleReaderModal } from './components/ArticleReaderModal';
+import { StudioWriterModal } from './components/StudioWriterModal';
 import { Footer } from './components/Footer';
 import { Artwork } from './types/portfolio';
+import { BlogPost, getStoredBlogPosts } from './data/blogPosts';
 
 export default function App() {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<BlogPost | null>(null);
+  const [articles, setArticles] = useState<BlogPost[]>(() => getStoredBlogPosts());
   const [isCVOpen, setIsCVOpen] = useState(false);
+  const [isWriterOpen, setIsWriterOpen] = useState(false);
   const [inquiryArtworkTitle, setInquiryArtworkTitle] = useState<string>('');
+
+  // Secret Creator URL Trigger (#writer or #admin)
+  React.useEffect(() => {
+    const checkHash = () => {
+      if (window.location.hash === '#writer' || window.location.hash === '#admin') {
+        setIsWriterOpen(true);
+      }
+    };
+
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+
+    return () => {
+      window.removeEventListener('hashchange', checkHash);
+    };
+  }, []);
 
   const handleNavigate = (sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -112,6 +134,9 @@ export default function App() {
         {/* Compact Single-Row Catalog Raisonné Carousel */}
         <CatalogRaisonne
           onSelectArtwork={(artwork) => setSelectedArtwork(artwork)}
+          onOpenArticle={(article) => setSelectedArticle(article)}
+          onOpenWriter={() => setIsWriterOpen(true)}
+          articles={articles}
         />
 
         {/* Institutional Record: Biennales & Museum Acquisitions */}
@@ -137,6 +162,41 @@ export default function App() {
       <ResumeModal
         isOpen={isCVOpen}
         onClose={() => setIsCVOpen(false)}
+      />
+
+      {/* Embedded Article Reader Modal */}
+      {selectedArticle && (
+        <ArticleReaderModal
+          article={selectedArticle}
+          onClose={() => setSelectedArticle(null)}
+          onSelectArticle={(art) => setSelectedArticle(art)}
+        />
+      )}
+
+      {/* In-App Visual Studio Writer (Secret URL Parameter Trigger: #writer or #admin) */}
+      <StudioWriterModal
+        isOpen={isWriterOpen}
+        articles={articles}
+        onClose={() => {
+          setIsWriterOpen(false);
+          if (window.location.hash === '#writer' || window.location.hash === '#admin') {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        }}
+        onPublishSuccess={(newPost) => {
+          setArticles(getStoredBlogPosts());
+          setSelectedArticle(newPost);
+          if (window.location.hash === '#writer' || window.location.hash === '#admin') {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        }}
+        onDeleteSuccess={(deletedId) => {
+          const refreshed = getStoredBlogPosts();
+          setArticles(refreshed);
+          if (selectedArticle?.id === deletedId) {
+            setSelectedArticle(null);
+          }
+        }}
       />
     </div>
   );

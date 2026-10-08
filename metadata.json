@@ -2,5 +2,7 @@
   "name": "Maxim Aroven — Fine Arts Atelier & 3D Spatial Portfolio",
   "description": "Fine arts portfolio of Maxim Aroven featuring monumental kinetic sculptures, optical refractions, generative spatial acoustics, and a 3D gallery carousel.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

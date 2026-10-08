@@ -5,36 +5,70 @@ interface AtelierAndContactProps {
   preselectedArtwork?: string;
 }
 
-export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
+const GOOGLE_SHEET_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwOUV-xEFyA6HwsCK2wsS0Bb2OSTj-qbaqUBncYDG_AOIE8VeCzyX_8LjAas02E-pnA/exec';
+
+export const AtelierAndContact: React.FC<AtelierAndContactProps> = ({ preselectedArtwork }) => {
   const [formState, setFormState] = useState({
     name: '',
     email: '',
-    inquiryType: 'Institutional Acquisition / Patronage',
+    inquiryType: 'General Inquiry',
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Pre-fill if opened from a specific artwork dossier
+  React.useEffect(() => {
+    if (preselectedArtwork) {
+      setFormState((prev) => ({
+        ...prev,
+        inquiryType: 'Business Inquiry',
+        message: prev.message || `Inquiry concerning work: "${preselectedArtwork}". `,
+      }));
+    }
+  }, [preselectedArtwork]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!formState.name.trim() || !formState.email.trim() || !formState.message.trim()) {
-      setErrorMessage('Please complete all required fields.');
+    if (!formState.name.trim() || !formState.message.trim()) {
+      setErrorMessage('Please provide your name and inquiry details.');
       return;
     }
 
-    if (!formState.email.includes('@') || !formState.email.includes('.')) {
-      setErrorMessage('Please enter a valid email address.');
+    if (formState.email.trim() && (!formState.email.includes('@') || !formState.email.includes('.'))) {
+      setErrorMessage('Please enter a valid email address, or leave it blank.');
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      // Direct live submission to the artist's connected Google Sheet
+      await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          name: formState.name,
+          email: formState.email,
+          inquiryType: formState.inquiryType,
+          message: formState.message,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
       setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 600);
+    } catch (error) {
+      console.error('Error transmitting inquiry:', error);
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+    }
   };
 
   return (
@@ -62,10 +96,10 @@ export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
             <span>04 // ACQUISITIONS & INQUIRIES</span>
           </div>
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-extrabold uppercase text-[#14151A] tracking-tight">
-            Patronage, <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-3xl sm:text-5xl md:text-6xl">commissions</span> & Loans
+            Patronage, <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-3xl sm:text-5xl md:text-6xl">requests</span> & Inquiries
           </h2>
           <p className="text-[#5A5852] text-xs sm:text-sm mt-2 sm:mt-3 leading-relaxed font-sans px-2">
-            Institutional acquisitions, museum exhibition loans, and site-specific commissions. Submit brief details below for direct curatorial review.
+            Art patron support, character requests, and general inquiries. Submit brief details below for review by MikAsciii and his Imaginary Friends.
           </p>
         </div>
 
@@ -80,7 +114,11 @@ export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
                 Inquiry Transmitted
               </h3>
               <p className="text-xs sm:text-sm text-[#5A5852] max-w-md mx-auto leading-relaxed font-sans">
-                Thank you, {formState.name}. Your acquisition proposal has been received. A curatorial representative will respond to <span className="font-mono-code text-[#E61E38] font-bold">{formState.email}</span> within two business days.
+                Thank you, {formState.name}. Your inquiry has been received. {formState.email ? (
+                  <>MikAsciii and his Imaginary Friends will respond to <span className="font-mono-code text-[#E61E38] font-bold">{formState.email}</span> sometime soon... if they feel like it.</>
+                ) : (
+                  <>MikAsciii and his Imaginary Friends will review your submission promptly.</>
+                )}
               </p>
               <div className="pt-4">
                 <button
@@ -88,7 +126,7 @@ export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
                     setFormState({
                       name: '',
                       email: '',
-                      inquiryType: 'Institutional Acquisition / Patronage',
+                      inquiryType: 'General Inquiry',
                       message: '',
                     });
                     setIsSubmitted(false);
@@ -104,10 +142,10 @@ export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
               <div className="border-b border-[#EBE4D8] pb-3 sm:pb-4 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-lg sm:text-xl font-editorial italic font-normal text-[#14151A] tracking-tight">
-                    Acquisition Inquiry Brief
+                    Contact us
                   </h3>
                   <p className="text-xs text-[#5A5852] mt-0.5 font-sans">
-                    Please provide your representative details and proposal summary.
+                    Please provide your details and inquiry summary.
                   </p>
                 </div>
                 <span className="text-[9px] sm:text-[10px] font-mono-code text-[#E61E38] font-bold px-2 py-0.5 rounded bg-red-50 border border-[#E61E38]/20 shrink-0">
@@ -132,21 +170,21 @@ export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
                     required
                     value={formState.name}
                     onChange={(e) => setFormState({ ...formState, name: e.target.value })}
-                    placeholder="e.g. Dr. Camille Delacroix"
+                    placeholder="e.g. President Jane Doe"
                     className="w-full px-3.5 py-3 rounded-xl bg-[#FAF8F5] border border-[#E2DACF] text-stone-900 text-base sm:text-sm focus:outline-none focus:border-[#E61E38] focus:bg-white transition-all placeholder:text-stone-400 font-sans"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-mono-code text-[#14151A] uppercase tracking-wider mb-1.5 font-bold">
-                    Email Address *
+                  <label className="block text-[11px] sm:text-xs font-mono-code text-[#14151A] uppercase tracking-wider mb-1.5 font-bold flex items-center justify-between">
+                    <span>Email Address</span>
+                    <span className="text-stone-400 font-normal lowercase">(optional)</span>
                   </label>
                   <input
                     type="email"
-                    required
                     value={formState.email}
                     onChange={(e) => setFormState({ ...formState, email: e.target.value })}
-                    placeholder="e.g. curator@biennale.org"
+                    placeholder="e.g. janetheprez@doe.org (optional)"
                     className="w-full px-3.5 py-3 rounded-xl bg-[#FAF8F5] border border-[#E2DACF] text-stone-900 text-base sm:text-sm focus:outline-none focus:border-[#E61E38] focus:bg-white transition-all placeholder:text-stone-400 font-sans"
                   />
                 </div>
@@ -160,26 +198,26 @@ export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
                 <select
                   value={formState.inquiryType}
                   onChange={(e) => setFormState({ ...formState, inquiryType: e.target.value })}
-                  className="w-full px-3.5 py-3 rounded-xl bg-[#FAF8F5] border border-[#E2DACF] text-stone-900 text-base sm:text-sm focus:outline-none focus:border-[#E61E38] focus:bg-white transition-all font-sans"
+                  className="w-full px-3.5 py-3 rounded-xl bg-[#FAF8F5] border border-[#E2DACF] text-stone-900 text-base sm:text-sm focus:outline-none focus:border-[#E61E38] focus:bg-white transition-all font-sans cursor-pointer"
                 >
-                  <option value="Institutional Acquisition / Patronage">Institutional Acquisition / Patronage</option>
-                  <option value="Museum Exhibition Loan">Museum Exhibition Loan</option>
-                  <option value="Site-Specific Architectural Commission">Site-Specific Architectural Commission</option>
-                  <option value="Curatorial Research & Publication">Curatorial Research & Publication</option>
+                  <option value="General Inquiry">General Inquiry</option>
+                  <option value="Character Suggestion">Character Suggestion</option>
+                  <option value="Business Inquiry">Business Inquiry</option>
+                  <option value="Tier/Membership Inquiry">Tier/Membership Inquiry</option>
                 </select>
               </div>
 
-              {/* Field 4: Proposal Details */}
+              {/* Field 4: Inquiry details */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-mono-code text-[#14151A] uppercase tracking-wider mb-1.5 font-bold">
-                  Proposal Details *
+                  Inquiry details *
                 </label>
                 <textarea
                   rows={4}
                   required
                   value={formState.message}
                   onChange={(e) => setFormState({ ...formState, message: e.target.value })}
-                  placeholder="Outline the scope, artwork(s) of interest, intended installation context, or exhibition timeframe..."
+                  placeholder="Provide details about your inquiry, character suggestion, commission, or membership question..."
                   className="w-full px-3.5 py-3 rounded-xl bg-[#FAF8F5] border border-[#E2DACF] text-stone-900 text-base sm:text-sm focus:outline-none focus:border-[#E61E38] focus:bg-white transition-all placeholder:text-stone-400 resize-none leading-relaxed font-sans"
                 />
               </div>
@@ -192,7 +230,7 @@ export const AtelierAndContact: React.FC<AtelierAndContactProps> = () => {
                   className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#E61E38] hover:bg-[#C4142B] text-white font-extrabold uppercase tracking-wider text-xs transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98] min-h-[48px]"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? 'Transmitting Brief...' : 'Transmit Acquisition Brief'}</span>
+                  <span>{isSubmitting ? 'Submitting inquiry...' : 'Submit my inquiry'}</span>
                 </button>
               </div>
             </form>

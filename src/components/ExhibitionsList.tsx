@@ -5,6 +5,7 @@ import { Landmark, ChevronUp, ChevronDown } from 'lucide-react';
 export const ExhibitionsList: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const total = EXHIBITION_CHRONOLOGY.length;
 
   useEffect(() => {
@@ -16,80 +17,39 @@ export const ExhibitionsList: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const maxIndex = isMobile ? Math.max(0, total - 1) : Math.max(0, total - 2);
   const itemHeight = isMobile ? 180 : 142;
   const gap = 12;
+  const stride = itemHeight + gap;
+  const maxIndex = isMobile ? Math.max(0, total - 1) : Math.max(0, total - 2);
 
-  const isDragging = useRef(false);
-  const startY = useRef(0);
-  const isWheeling = useRef(false);
-  const wheelTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  const slideUp = useCallback(() => {
-    setActiveIndex((prev) => Math.max(0, prev - 1));
-  }, []);
-
-  const slideDown = useCallback(() => {
-    setActiveIndex((prev) => Math.min(maxIndex, prev + 1));
-  }, [maxIndex]);
-
-  // Wheel handling with debounce/throttle
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (isWheeling.current) return;
-
-    if (Math.abs(e.deltaY) > 25) {
-      isWheeling.current = true;
-      if (e.deltaY > 0) {
-        slideDown();
-      } else {
-        slideUp();
-      }
-
-      if (wheelTimeout.current) clearTimeout(wheelTimeout.current);
-      wheelTimeout.current = setTimeout(() => {
-        isWheeling.current = false;
-      }, 400);
+  // Programmatic smooth scroll to item
+  const scrollToItem = useCallback((targetIndex: number) => {
+    const clamped = Math.max(0, Math.min(maxIndex, targetIndex));
+    setActiveIndex(clamped);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: clamped * stride,
+        behavior: 'smooth',
+      });
     }
+  }, [maxIndex, stride]);
+
+  const slideUp = () => {
+    scrollToItem(activeIndex - 1);
   };
 
-  // Mouse Drag Vertically
-  const handleMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true;
-    startY.current = e.clientY;
+  const slideDown = () => {
+    scrollToItem(activeIndex + 1);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    const deltaY = e.clientY - startY.current;
-    if (Math.abs(deltaY) > 40) {
-      if (deltaY < 0) {
-        slideDown();
-      } else {
-        slideUp();
-      }
-      isDragging.current = false;
-    }
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-  };
-
-  // Touch Swipe Vertically
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const deltaY = e.touches[0].clientY - startY.current;
-    if (Math.abs(deltaY) > 35) {
-      if (deltaY < 0) {
-        slideDown();
-      } else {
-        slideUp();
-      }
-      startY.current = e.touches[0].clientY;
+  // Sync active indicator with user's smooth scroll position
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const scrollTop = scrollContainerRef.current.scrollTop;
+    const computedIndex = Math.round(scrollTop / stride);
+    const clamped = Math.max(0, Math.min(maxIndex, computedIndex));
+    if (clamped !== activeIndex) {
+      setActiveIndex(clamped);
     }
   };
 
@@ -116,13 +76,13 @@ export const ExhibitionsList: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-[#FAF8F5] border border-[#E61E38]/30 text-[10px] font-mono-code uppercase tracking-wider text-[#E61E38] mb-2 font-bold shadow-xs">
               <Landmark className="w-3 h-3" />
-              <span>03 // INSTITUTIONAL RECORD</span>
+              <span>03 // UPCOMING PROJECTS</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-extrabold uppercase text-[#14151A] tracking-tight">
-              Exhibitions, <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-3xl sm:text-4xl md:text-5xl">biennales</span> & Collections
+              Upcoming <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-3xl sm:text-4xl md:text-5xl">illustrations & other projects</span>
             </h2>
             <p className="text-xs text-[#5A5852] mt-1 font-sans">
-              Chronological milestones across museums, biennales, and public holdings.
+              Projects I'm currently working on and what you can expect in the future.
             </p>
           </div>
 
@@ -141,7 +101,7 @@ export const ExhibitionsList: React.FC = () => {
               <button
                 onClick={slideUp}
                 disabled={activeIndex === 0}
-                className="p-1.5 rounded-lg text-stone-600 hover:text-white hover:bg-[#E61E38] transition-all disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-stone-400 min-h-[34px] min-w-[34px] flex items-center justify-center"
+                className="p-1.5 rounded-lg text-stone-600 hover:text-white hover:bg-[#E61E38] transition-all disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-stone-400 min-h-[34px] min-w-[34px] flex items-center justify-center cursor-pointer"
                 aria-label="Slide up to previous exhibition"
               >
                 <ChevronUp className="w-4 h-4" />
@@ -149,7 +109,7 @@ export const ExhibitionsList: React.FC = () => {
               <button
                 onClick={slideDown}
                 disabled={activeIndex >= maxIndex}
-                className="p-1.5 rounded-lg text-stone-600 hover:text-white hover:bg-[#E61E38] transition-all disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-stone-400 min-h-[34px] min-w-[34px] flex items-center justify-center"
+                className="p-1.5 rounded-lg text-stone-600 hover:text-white hover:bg-[#E61E38] transition-all disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-stone-400 min-h-[34px] min-w-[34px] flex items-center justify-center cursor-pointer"
                 aria-label="Slide down to next exhibition"
               >
                 <ChevronDown className="w-4 h-4" />
@@ -158,28 +118,21 @@ export const ExhibitionsList: React.FC = () => {
           </div>
         </div>
 
-        {/* Vertical Carousel Viewport */}
+        {/* Vertical Smooth Scroll Viewport */}
         <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           
-          {/* Main Slider Frame */}
+          {/* Main Smooth Scroll Viewport with Native Acceleration & Scroll Snap */}
           <div
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            style={{ height: isMobile ? '196px' : '296px' }}
-            className="lg:col-span-11 relative overflow-hidden rounded-xl sm:rounded-2xl cursor-grab active:cursor-grabbing border border-[#E2DACF] bg-[#EFEBE2]/80 p-2 sm:p-2.5 shadow-sm touch-pan-y"
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            style={{ 
+              height: isMobile ? '200px' : '304px',
+              WebkitOverflowScrolling: 'touch',
+            }}
+            className="lg:col-span-11 relative overflow-y-auto scroll-smooth snap-y snap-mandatory rounded-xl sm:rounded-2xl border border-[#E2DACF] bg-[#EFEBE2]/80 p-2 sm:p-2.5 shadow-sm touch-pan-y"
           >
-            {/* Sliding Track */}
-            <div
-              className="flex flex-col gap-3 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-              style={{
-                transform: `translateY(-${activeIndex * (itemHeight + gap)}px)`,
-              }}
-            >
+            {/* Scrollable Track */}
+            <div className="flex flex-col gap-3">
               {EXHIBITION_CHRONOLOGY.map((item, idx) => {
                 const isVisible = isMobile 
                   ? idx === activeIndex 
@@ -188,11 +141,11 @@ export const ExhibitionsList: React.FC = () => {
                 return (
                   <article
                     key={idx}
-                    style={{ height: `${itemHeight}px` }}
-                    className={`shrink-0 rounded-xl p-3.5 sm:p-5 flex flex-col justify-between transition-all duration-300 border ${
+                    style={{ minHeight: `${itemHeight}px`, height: `${itemHeight}px` }}
+                    className={`snap-start shrink-0 rounded-xl p-3.5 sm:p-5 flex flex-col justify-between transition-all duration-300 border ${
                       isVisible
                         ? 'bg-[#FAF8F5] border-[#E2DACF] hover:border-[#E61E38] text-stone-900 shadow-md'
-                        : 'bg-[#FAF8F5]/50 border-[#E2DACF]/50 opacity-40 text-stone-400'
+                        : 'bg-[#FAF8F5]/65 border-[#E2DACF]/60 opacity-60 text-stone-500'
                     }`}
                   >
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-6 items-start lg:items-baseline">
@@ -240,13 +193,13 @@ export const ExhibitionsList: React.FC = () => {
             </div>
           </div>
 
-          {/* Right-Side Vertical Position Rail & Indicators (Hidden on mobile) */}
+          {/* Right-Side Vertical Position Rail & Indicators */}
           <div className="hidden lg:flex lg:col-span-1 flex-col items-center justify-center gap-2 h-full py-4">
             {Array.from({ length: maxIndex + 1 }).map((_, i) => (
               <button
                 key={i}
-                onClick={() => setActiveIndex(i)}
-                className={`transition-all duration-300 rounded-full ${
+                onClick={() => scrollToItem(i)}
+                className={`transition-all duration-300 rounded-full cursor-pointer ${
                   i === activeIndex
                     ? 'w-1.5 h-8 bg-[#E61E38]'
                     : 'w-1.5 h-2 bg-stone-300 hover:bg-stone-500'
@@ -262,11 +215,11 @@ export const ExhibitionsList: React.FC = () => {
         <div className="flex items-center justify-between text-[11px] font-mono-code text-[#5A5852] mt-3 px-1">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E61E38]" />
-            <span className="hidden sm:inline">Scroll mouse wheel or drag vertically to slide through records</span>
-            <span className="sm:hidden">Swipe up or down to cycle records</span>
+            <span className="hidden sm:inline">Some events and projects may be cancelled</span>
+            <span className="sm:hidden">Swipe up or down smoothly to browse records</span>
           </span>
           <span className="text-stone-400 text-[10px]">
-            [Use ↑ / ↓ buttons]
+            [Smooth snap enabled]
           </span>
         </div>
 

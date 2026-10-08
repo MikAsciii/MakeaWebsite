@@ -1,16 +1,27 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { ARTWORKS } from '../data/artworksData';
 import { Artwork } from '../types/portfolio';
-import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, BookOpen, ArrowRight, Sparkles } from 'lucide-react';
+import { BLOG_POSTS, BlogPost } from '../data/blogPosts';
 
 interface CatalogRaisonneProps {
   onSelectArtwork: (artwork: Artwork) => void;
+  onOpenArticle?: (article: BlogPost) => void;
+  onOpenWriter?: () => void;
+  articles?: BlogPost[];
 }
 
-export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ onSelectArtwork }) => {
+export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ 
+  onSelectArtwork, 
+  onOpenArticle,
+  onOpenWriter,
+  articles,
+}) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCursorGrabbing, setIsCursorGrabbing] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const activeArticle = (articles && articles.length > 0) ? articles[0] : BLOG_POSTS[0];
 
   // Mouse drag-to-scroll tracking refs
   const isDragging = useRef(false);
@@ -19,15 +30,18 @@ export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ onSelectArtwor
   const hasDragged = useRef(false);
 
   const categories = [
-    { key: 'all', label: 'All Catalogued Works', count: ARTWORKS.length },
-    { key: 'sculpture', label: 'Sculpture & Optics', count: ARTWORKS.filter(a => a.category === 'sculpture').length },
-    { key: 'spatial', label: 'Spatial Sound & GLSL', count: ARTWORKS.filter(a => a.category === 'spatial').length },
-    { key: 'painting', label: 'Mixed Media & Pigment', count: ARTWORKS.filter(a => a.category === 'painting').length },
-    { key: 'generative', label: 'Generative Typography & Data', count: ARTWORKS.filter(a => a.category === 'generative').length },
+    { key: 'all', label: 'All Recent Works', count: ARTWORKS.length },
+    { key: 'sculpture', label: 'Illustrations', count: ARTWORKS.filter(a => a.category === 'sculpture').length },
+    { key: 'spatial', label: 'News and Blogs', count: ARTWORKS.filter(a => a.category === 'spatial').length },
+    { key: 'painting', label: 'Membership Posts', count: ARTWORKS.filter(a => a.category === 'painting').length },
+    { key: 'generative', label: 'Miscellaneous', count: ARTWORKS.filter(a => a.category === 'generative' || a.category === 'kinetics').length },
   ];
 
   const filteredArtworks = useMemo(() => {
     if (selectedCategory === 'all') return ARTWORKS;
+    if (selectedCategory === 'generative') {
+      return ARTWORKS.filter(a => a.category === 'generative' || a.category === 'kinetics');
+    }
     return ARTWORKS.filter(a => a.category === selectedCategory);
   }, [selectedCategory]);
 
@@ -89,13 +103,13 @@ export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ onSelectArtwor
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-[#FAF8F5] border border-[#E61E38]/30 text-[10px] font-mono-code uppercase tracking-wider text-[#E61E38] mb-2 font-bold shadow-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-[#E61E38]" />
-              <span>02 // CATALOG RAISONNÉ</span>
+              <span>02 // RECENT ACTIVITIES AND PROJECTS </span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-extrabold uppercase text-[#14151A] tracking-tight">
-              Archived <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-3xl sm:text-4xl md:text-5xl">editions</span> & Registry
+              Recent <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-3xl sm:text-4xl md:text-5xl">projects & news</span>
             </h2>
             <p className="text-xs text-[#5A5852] mt-1 font-sans">
-              Swipe or drag horizontally to inspect catalogued works.
+              Look through and explore my most recent illustrations, articles, and more!.
             </p>
           </div>
 
@@ -140,6 +154,46 @@ export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ onSelectArtwor
           </div>
         </div>
 
+        {/* Featured Article Banner (Highlights latest blog post and invites embedded reader) */}
+        {onOpenArticle && (
+          <div className="mb-6 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#FAF3E8] via-[#FAF8F5] to-white border border-[#E2DACF] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#E61E38] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#E61E38] px-2 py-0.5 rounded bg-red-50 border border-red-200">
+                    FEATURED ARTICLE
+                  </span>
+                  <span className="text-[11px] font-mono-code text-stone-500">
+                    {activeArticle.date} · {activeArticle.readTime}
+                  </span>
+                </div>
+                <h3
+                  onClick={() => onOpenArticle(activeArticle)}
+                  className="text-base sm:text-lg font-display font-extrabold uppercase text-[#14151A] tracking-tight hover:text-[#E61E38] transition-colors cursor-pointer"
+                >
+                  {activeArticle.title}
+                </h3>
+                <p className="text-xs text-[#5A5852] line-clamp-1 max-w-2xl font-sans mt-0.5">
+                  {activeArticle.subtitle}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-stretch md:self-auto justify-end shrink-0">
+              <button
+                onClick={() => onOpenArticle(activeArticle)}
+                className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-[#14151A] hover:bg-[#E61E38] text-white font-mono-code text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer min-h-[40px]"
+              >
+                <span>Read Story</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Compact Single-Row Sliding Carousel Track with Mobile Snap & Desktop Drag */}
         <div className="relative">
           <div
@@ -158,10 +212,14 @@ export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ onSelectArtwor
                 key={artwork.id}
                 onClick={() => {
                   if (!hasDragged.current) {
-                    onSelectArtwork(artwork);
+                    if (artwork.category === 'spatial' && onOpenArticle) {
+                      onOpenArticle(BLOG_POSTS[0]);
+                    } else {
+                      onSelectArtwork(artwork);
+                    }
                   }
                 }}
-                className="w-[245px] xs:w-[270px] sm:w-[300px] md:w-[320px] shrink-0 snap-start group relative rounded-xl sm:rounded-2xl bg-[#FAF8F5] border border-[#E2DACF] hover:border-[#E61E38] transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 select-none"
+                className="w-[245px] xs:w-[270px] sm:w-[300px] md:w-[320px] shrink-0 snap-start group relative rounded-xl sm:rounded-2xl bg-[#FAF8F5] border border-[#E2DACF] hover:border-[#E61E38] transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 select-none cursor-pointer"
               >
                 {/* Media Plate */}
                 <div className="relative aspect-[16/11] w-full overflow-hidden bg-[#EFEBE3]">
@@ -186,10 +244,17 @@ export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ onSelectArtwor
 
                   {/* Hover / Tap Inspect Cue */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
-                    <div className="px-3.5 py-1.5 rounded-lg bg-[#E61E38] text-white font-extrabold uppercase text-xs flex items-center gap-1.5 shadow-md">
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Inspect</span>
-                    </div>
+                    {artwork.category === 'spatial' && onOpenArticle ? (
+                      <div className="px-3.5 py-1.5 rounded-lg bg-[#E61E38] text-white font-extrabold uppercase text-xs flex items-center gap-1.5 shadow-md">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Read Article</span>
+                      </div>
+                    ) : (
+                      <div className="px-3.5 py-1.5 rounded-lg bg-[#E61E38] text-white font-extrabold uppercase text-xs flex items-center gap-1.5 shadow-md">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Inspect</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -209,7 +274,9 @@ export const CatalogRaisonne: React.FC<CatalogRaisonneProps> = ({ onSelectArtwor
 
                   <div className="pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 border-t border-[#EBE4D8] flex items-center justify-between text-[10px] sm:text-[11px] font-mono-code text-[#5A5852]">
                     <span className="truncate max-w-[140px] sm:max-w-[170px]">{artwork.dimensions.split('(')[0]}</span>
-                    <span className="text-[#E61E38] font-bold shrink-0">{artwork.edition.split('+')[0]}</span>
+                    <span className="text-[#E61E38] font-bold shrink-0">
+                      {artwork.category === 'spatial' ? '5 MIN READ' : artwork.edition.split('+')[0]}
+                    </span>
                   </div>
                 </div>
               </article>

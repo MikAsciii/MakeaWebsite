@@ -3,10 +3,10 @@ import { ArrowUp } from 'lucide-react';
 import { ARTIST } from '../data/artworksData';
 
 interface FooterProps {
-  onOpenCV: () => void;
+  onOpenCV?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenCV }) => {
+export const Footer: React.FC<FooterProps> = () => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -28,17 +28,16 @@ export const Footer: React.FC<FooterProps> = ({ onOpenCV }) => {
 
         {/* Center: Institutional links */}
         <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-stone-400 font-mono-code text-[11px]">
-          <a href="#carousel" className="hover:text-[#E61E38] transition-colors py-1">3D Gallery</a>
-          <a href="#catalog" className="hover:text-[#E61E38] transition-colors py-1">Catalog Raisonné</a>
-          <a href="#exhibitions" className="hover:text-[#E61E38] transition-colors py-1">Exhibitions</a>
-          <button onClick={onOpenCV} className="hover:text-[#E61E38] transition-colors py-1">Curriculum Vitae</button>
-          <a href="#contact" className="hover:text-[#E61E38] transition-colors py-1">Acquisitions</a>
+          <a href="#carousel" className="hover:text-[#E61E38] transition-colors py-1">Career Highlights</a>
+          <a href="#catalog" className="hover:text-[#E61E38] transition-colors py-1">Recent Activities & Projects</a>
+          <a href="#exhibitions" className="hover:text-[#E61E38] transition-colors py-1">Upcoming Projects</a>
+          <a href="#contact" className="hover:text-[#E61E38] transition-colors py-1">Contact & Inquiries</a>
         </div>
 
         {/* Right: Back to top button */}
         <button
           onClick={scrollToTop}
-          className="p-2 sm:p-2.5 rounded-xl bg-stone-900 hover:bg-[#E61E38] text-stone-300 hover:text-white border border-stone-700 hover:border-[#E61E38] transition-all flex items-center gap-1.5 font-mono-code text-[11px] min-h-[38px]"
+          className="p-2 sm:p-2.5 rounded-xl bg-stone-900 hover:bg-[#E61E38] text-stone-300 hover:text-white border border-stone-700 hover:border-[#E61E38] transition-all flex items-center gap-1.5 font-mono-code text-[11px] min-h-[38px] cursor-pointer"
           aria-label="Back to top"
         >
           <span>Top</span>

@@ -7,20 +7,36 @@ interface ThreeDimensionalCarouselProps {
   onSelectArtwork: (artwork: Artwork) => void;
 }
 
+const CAROUSEL_LIMIT = 6;
+
 export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> = ({ onSelectArtwork }) => {
-  const [currentStep, setCurrentStep] = useState(0);
+  // Continuous rotation angle in degrees
+  const [rotationAngle, setRotationAngle] = useState(0);
+  const [isInteractiveDrag, setIsInteractiveDrag] = useState(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [radius, setRadius] = useState(370);
   const [cardWidth, setCardWidth] = useState(330);
+
+  // Drag tracking refs
   const isDragging = useRef(false);
-  const startX = useRef(0);
+  const dragStartX = useRef(0);
+  const dragStartAngle = useRef(0);
+  const lastX = useRef(0);
+  const lastTime = useRef(0);
+  const velocity = useRef(0);
+  const hasMoved = useRef(false);
   const carouselContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const total = ARTWORKS.length;
-  const angleStep = 360 / total;
-  const activeIndex = ((currentStep % total) + total) % total;
+  // Showcase exactly 6 curated artworks in the 3D spatial cylinder
+  const carouselArtworks = ARTWORKS.slice(0, CAROUSEL_LIMIT);
+  const total = carouselArtworks.length;
+  const angleStep = 360 / total; // exactly 60 deg
 
-  // Responsive radius & card width calculation tailored for small mobile through ultra-wide
+  // Active artwork calculated from the closest slot
+  const currentSlot = Math.round(rotationAngle / angleStep);
+  const activeIndex = ((currentSlot % total) + total) % total;
+
+  // Responsive radius & card width calculation
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -46,35 +62,40 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Programmatic steps
   const nextSlide = useCallback(() => {
-    setCurrentStep((prev) => prev + 1);
-  }, []);
+    setRotationAngle((prev) => {
+      const nearest = Math.round(prev / angleStep);
+      return (nearest + 1) * angleStep;
+    });
+  }, [angleStep]);
 
   const prevSlide = useCallback(() => {
-    setCurrentStep((prev) => prev - 1);
-  }, []);
+    setRotationAngle((prev) => {
+      const nearest = Math.round(prev / angleStep);
+      return (nearest - 1) * angleStep;
+    });
+  }, [angleStep]);
 
   const goToIndex = useCallback((targetIdx: number) => {
-    setCurrentStep((prevStep) => {
-      const currentActive = ((prevStep % total) + total) % total;
-      let diff = (targetIdx - currentActive) % total;
-      if (diff > total / 2) {
-        diff -= total;
-      } else if (diff < -total / 2) {
-        diff += total;
-      }
-      return prevStep + diff;
+    setRotationAngle((prev) => {
+      const nearest = Math.round(prev / angleStep);
+      const currentNorm = ((nearest % total) + total) % total;
+      let diff = (targetIdx - currentNorm) % total;
+      if (diff > total / 2) diff -= total;
+      if (diff < -total / 2) diff += total;
+      return (nearest + diff) * angleStep;
     });
-  }, [total]);
+  }, [total, angleStep]);
 
   // Autoplay timer
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || isInteractiveDrag) return;
     const interval = setInterval(() => {
       nextSlide();
     }, 4500);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, nextSlide]);
+  }, [isAutoPlaying, isInteractiveDrag, nextSlide]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -86,49 +107,130 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nextSlide, prevSlide]);
 
-  // Mouse drag handlers
+  // Drag physics sensitivity based on cylinder radius
+  const degreesPerPixel = (360 / (radius * 2 * Math.PI)) * 0.85;
+
+  // Mouse Drag Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
-    startX.current = e.clientX;
+    hasMoved.current = false;
+    dragStartX.current = e.clientX;
+    lastX.current = e.clientX;
+    lastTime.current = performance.now();
+    velocity.current = 0;
+    dragStartAngle.current = rotationAngle;
     setIsAutoPlaying(false);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging.current) return;
-    const deltaX = e.clientX - startX.current;
-    if (Math.abs(deltaX) > 50) {
-      if (deltaX > 0) {
-        prevSlide();
-      } else {
-        nextSlide();
+    const clientX = e.clientX;
+    const deltaX = clientX - dragStartX.current;
+
+    if (Math.abs(deltaX) > 4) {
+      if (!hasMoved.current) {
+        hasMoved.current = true;
+        setIsInteractiveDrag(true);
       }
-      isDragging.current = false;
+
+      const now = performance.now();
+      const dt = now - lastTime.current;
+      if (dt > 0) {
+        velocity.current = (clientX - lastX.current) / dt;
+      }
+      lastX.current = clientX;
+      lastTime.current = now;
+
+      // 1:1 direct manipulation of angle in degrees
+      const newAngle = dragStartAngle.current - deltaX * degreesPerPixel;
+      setRotationAngle(newAngle);
     }
   };
 
   const handleMouseUp = () => {
+    if (!isDragging.current) return;
     isDragging.current = false;
+    setIsInteractiveDrag(false);
+
+    if (hasMoved.current) {
+      // Calculate inertial momentum flick/fling
+      const flickDistance = velocity.current * 160 * degreesPerPixel;
+      const projectedAngle = rotationAngle - flickDistance;
+      const nearestSlot = Math.round(projectedAngle / angleStep);
+      setRotationAngle(nearestSlot * angleStep);
+    } else {
+      // Clean tap/click, snap to closest slot
+      const nearestSlot = Math.round(rotationAngle / angleStep);
+      setRotationAngle(nearestSlot * angleStep);
+    }
   };
 
-  // Touch handlers with gesture threshold
+  // Touch Handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
+    const touch = e.touches[0];
+    isDragging.current = true;
+    hasMoved.current = false;
+    dragStartX.current = touch.clientX;
+    lastX.current = touch.clientX;
+    lastTime.current = performance.now();
+    velocity.current = 0;
+    dragStartAngle.current = rotationAngle;
     setIsAutoPlaying(false);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    const deltaX = e.touches[0].clientX - startX.current;
-    if (Math.abs(deltaX) > 42) {
-      if (deltaX > 0) {
-        prevSlide();
-      } else {
-        nextSlide();
+    if (!isDragging.current) return;
+    const touch = e.touches[0];
+    const clientX = touch.clientX;
+    const deltaX = clientX - dragStartX.current;
+
+    if (Math.abs(deltaX) > 5) {
+      if (!hasMoved.current) {
+        hasMoved.current = true;
+        setIsInteractiveDrag(true);
       }
-      startX.current = e.touches[0].clientX;
+
+      const now = performance.now();
+      const dt = now - lastTime.current;
+      if (dt > 0) {
+        velocity.current = (clientX - lastX.current) / dt;
+      }
+      lastX.current = clientX;
+      lastTime.current = now;
+
+      const newAngle = dragStartAngle.current - deltaX * degreesPerPixel;
+      setRotationAngle(newAngle);
     }
   };
 
-  const currentArtwork = ARTWORKS[activeIndex];
+  const handleTouchEnd = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    setIsInteractiveDrag(false);
+
+    if (hasMoved.current) {
+      const flickDistance = velocity.current * 180 * degreesPerPixel;
+      const projectedAngle = rotationAngle - flickDistance;
+      const nearestSlot = Math.round(projectedAngle / angleStep);
+      setRotationAngle(nearestSlot * angleStep);
+    } else {
+      const nearestSlot = Math.round(rotationAngle / angleStep);
+      setRotationAngle(nearestSlot * angleStep);
+    }
+  };
+
+  // Global mouseup listener so dragging outside the element still releases cleanly
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging.current) {
+        handleMouseUp();
+      }
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  });
+
+  const currentArtwork = carouselArtworks[activeIndex];
 
   return (
     <section id="carousel" className="relative pt-20 pb-16 sm:pt-24 sm:pb-20 md:pt-[108px] md:pb-28 overflow-hidden select-none">
@@ -149,24 +251,24 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 md:pl-16">
         
         {/* Curatorial Header */}
-        <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-10 md:mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-[54px] sm:mb-[70px] md:mb-[78px]">
           <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-md bg-[#121318] text-white text-[10px] font-mono-code uppercase tracking-wider mb-2.5 sm:mb-3 font-bold shadow-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-[#E61E38]" />
-            <span>STUDIO SUITE // PLATE 01</span>
+            <span>MIKASCIII // FEATURED WORKS </span>
             <span className="text-[#E61E38]">·</span>
-            <span className="text-stone-300">EST. 2026</span>
+            <span className="text-stone-300">EST. 2023</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold text-[#14151A] tracking-tight uppercase leading-tight sm:leading-none">
-            Materiality of <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-3xl sm:text-5xl md:text-6xl lg:text-7xl block sm:inline mt-0.5 sm:mt-0">algorithmic space</span>
+            Artworks and Illustrations <span className="font-editorial italic font-normal lowercase tracking-normal text-[#E61E38] text-2xl sm:text-4xl md:text-5xl lg:text-6xl block sm:inline mt-0.5 sm:mt-0">featured projects and highlights</span>
           </h1>
           
           <p className="text-xs sm:text-sm text-[#5A5852] mt-2 sm:mt-3 max-w-lg mx-auto leading-relaxed font-sans px-2">
-            Curated monumental works, kinetic refractions, and generative spatial canvases. Drag or swipe in continuous 3D coordinates.
+            Character concepts, Graphic Illustrations, and Project highlights.
           </p>
         </div>
 
-        {/* 3D Carousel Stage */}
+        {/* 3D Carousel Stage with Direct Manipulation Drag & Slide */}
         <div
           ref={carouselContainerRef}
           onMouseDown={handleMouseDown}
@@ -174,18 +276,24 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
           onMouseUp={handleMouseUp}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           style={{ perspective: '1600px', touchAction: 'pan-y' }}
-          className="relative h-[390px] sm:h-[470px] md:h-[520px] w-full mx-auto flex items-center justify-center cursor-grab active:cursor-grabbing my-2 sm:my-4"
+          className={`relative h-[390px] sm:h-[470px] md:h-[520px] w-full mx-auto flex items-center justify-center my-2 sm:my-4 select-none ${
+            isInteractiveDrag ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
         >
           {/* Rotating 3D World */}
           <div
-            className="relative w-full h-full flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            className="relative w-full h-full flex items-center justify-center pointer-events-auto"
             style={{
               transformStyle: 'preserve-3d',
-              transform: `rotateY(${-currentStep * angleStep}deg)`,
+              transform: `rotateY(${-rotationAngle}deg)`,
+              transition: isInteractiveDrag 
+                ? 'none' 
+                : 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
-            {ARTWORKS.map((artwork, idx) => {
+            {carouselArtworks.map((artwork, idx) => {
               const itemAngle = idx * angleStep;
               const isCurrent = idx === activeIndex;
 
@@ -194,6 +302,8 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
                   key={artwork.id}
                   onClick={(e) => {
                     e.stopPropagation();
+                    // If user was actively dragging or flinging, prevent accidental click
+                    if (hasMoved.current) return;
                     if (isCurrent) {
                       onSelectArtwork(artwork);
                     } else {
@@ -216,15 +326,16 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
                     <img
                       src={artwork.image}
                       alt={artwork.title}
+                      draggable={false}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 pointer-events-none select-none"
                     />
 
                     {/* Gradient Overlay for Readable Text */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/20 pointer-events-none" />
 
                     {/* Top Accession Tag */}
-                    <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 flex items-center justify-between text-xs drop-shadow">
+                    <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 flex items-center justify-between text-xs drop-shadow pointer-events-none">
                       <span className="font-mono-code text-[10px] sm:text-[11px] text-white font-bold tracking-wider px-2 py-0.5 rounded bg-[#E61E38] shadow-sm">
                         {artwork.catalogNumber}
                       </span>
@@ -234,15 +345,15 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
                     </div>
 
                     {/* Center Inspect Cue on hover / active */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-xs">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-xs pointer-events-none">
                       <div className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-[#E61E38] text-white font-extrabold text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md">
                         <Eye className="w-3.5 h-3.5" />
-                        <span>{isCurrent ? 'Inspect Dossier' : 'Rotate to Front'}</span>
+                        <span>{isCurrent ? 'View Project' : 'Rotate to Front'}</span>
                       </div>
                     </div>
 
                     {/* Bottom Metadata Lockup */}
-                    <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 text-left">
+                    <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 text-left pointer-events-none">
                       <div className="text-[9px] sm:text-[10px] font-mono-code uppercase tracking-wider text-red-200 font-bold mb-0.5">
                         {artwork.categoryLabel}
                       </div>
@@ -265,7 +376,7 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
               e.stopPropagation();
               prevSlide();
             }}
-            className="absolute left-1 sm:left-3 md:left-6 z-30 p-2 sm:p-3 rounded-full bg-[#FAF8F5]/90 hover:bg-[#E61E38] text-stone-800 hover:text-white border border-[#E2DACF] hover:border-[#E61E38] transition-all duration-200 shadow-md focus:outline-none min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="absolute left-1 sm:left-3 md:left-6 z-30 p-2 sm:p-3 rounded-full bg-[#FAF8F5]/90 hover:bg-[#E61E38] text-stone-800 hover:text-white border border-[#E2DACF] hover:border-[#E61E38] transition-all duration-200 shadow-md focus:outline-none min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
             aria-label="Previous artwork in 3D carousel"
           >
             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -276,7 +387,7 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
               e.stopPropagation();
               nextSlide();
             }}
-            className="absolute right-1 sm:right-3 md:right-6 z-30 p-2 sm:p-3 rounded-full bg-[#FAF8F5]/90 hover:bg-[#E61E38] text-stone-800 hover:text-white border border-[#E2DACF] hover:border-[#E61E38] transition-all duration-200 shadow-md focus:outline-none min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="absolute right-1 sm:right-3 md:right-6 z-30 p-2 sm:p-3 rounded-full bg-[#FAF8F5]/90 hover:bg-[#E61E38] text-stone-800 hover:text-white border border-[#E2DACF] hover:border-[#E61E38] transition-all duration-200 shadow-md focus:outline-none min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
             aria-label="Next artwork in 3D carousel"
           >
             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -284,7 +395,7 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
         </div>
 
         {/* Carousel Understage: Active Artwork Caption & Controls */}
-        <div className="mt-6 sm:mt-10 md:mt-14 max-w-3xl mx-auto p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl bg-[#FAF8F5] border border-[#E2DACF] shadow-xl relative overflow-hidden">
+        <div className="mt-[54px] sm:mt-[70px] md:mt-[86px] max-w-3xl mx-auto p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl bg-[#FAF8F5] border border-[#E2DACF] shadow-xl relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-[#EBE4D8]">
             <div>
               <div className="flex items-center gap-1.5 sm:gap-2 font-mono-code text-[11px] sm:text-xs text-[#E61E38] mb-1 font-bold">
@@ -307,7 +418,7 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
             {/* Solid Button */}
             <button
               onClick={() => onSelectArtwork(currentArtwork)}
-              className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#E61E38] hover:bg-[#C4142B] text-white font-extrabold uppercase tracking-wider text-xs transition-all flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] shrink-0 min-h-[44px]"
+              className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#E61E38] hover:bg-[#C4142B] text-white font-extrabold uppercase tracking-wider text-xs transition-all flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] shrink-0 min-h-[44px] cursor-pointer"
             >
               <span>Examine Dossier</span>
               <Maximize2 className="w-3.5 h-3.5" />
@@ -326,7 +437,7 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
             <div className="flex items-center justify-between sm:justify-end gap-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-[#EBE4D8]/60">
               <button
                 onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                className="p-1.5 text-stone-500 hover:text-[#E61E38] transition-colors rounded-lg bg-white sm:bg-transparent border sm:border-0 border-[#E2DACF]"
+                className="p-1.5 text-stone-500 hover:text-[#E61E38] transition-colors rounded-lg bg-white sm:bg-transparent border sm:border-0 border-[#E2DACF] cursor-pointer"
                 title={isAutoPlaying ? 'Pause rotation' : 'Resume rotation'}
                 aria-label={isAutoPlaying ? 'Pause rotation' : 'Resume rotation'}
               >
@@ -334,11 +445,11 @@ export const ThreeDimensionalCarousel: React.FC<ThreeDimensionalCarouselProps> =
               </button>
 
               <div className="flex items-center gap-1.5 ml-2">
-                {ARTWORKS.map((_, i) => (
+                {carouselArtworks.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => goToIndex(i)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                       i === activeIndex 
                         ? 'w-6 sm:w-7 bg-[#E61E38]' 
                         : 'w-1.5 bg-stone-300 hover:bg-stone-500'

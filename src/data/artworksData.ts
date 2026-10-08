@@ -37,7 +37,7 @@ export const ARTWORKS: Artwork[] = [
     ],
     image: '/src/assets/images/artwork_sculptural_monolith_1791181508324.jpg',
     category: 'sculpture',
-    categoryLabel: 'Sculpture & Optics',
+    categoryLabel: 'Illustrations',
     specifications: [
       { label: 'Weight', value: '185 kg (assembled)' },
       { label: 'Motorization', value: 'Direct-drive brushless stepper (<18 dB)' },
@@ -64,7 +64,7 @@ export const ARTWORKS: Artwork[] = [
     ],
     image: '/src/assets/images/project_spatial_canvas_1791181042756.jpg',
     category: 'spatial',
-    categoryLabel: 'Spatial Sound & GLSL',
+    categoryLabel: 'News and Blogs',
     specifications: [
       { label: 'Sampling Rate', value: '96 kHz / 32-bit floating point' },
       { label: 'Particles', value: '10,240 concurrent kinetic nodes' },
@@ -91,7 +91,7 @@ export const ARTWORKS: Artwork[] = [
     ],
     image: '/src/assets/images/artwork_chromatic_canvas_1791181524746.jpg',
     category: 'painting',
-    categoryLabel: 'Mixed Media & Pigment',
+    categoryLabel: 'Membership Posts',
     specifications: [
       { label: 'Support', value: '450 gsm Claessens Belgian linen' },
       { label: 'Pigments', value: 'Hand-ground mineral lapis & Prussian iron' },
@@ -118,7 +118,7 @@ export const ARTWORKS: Artwork[] = [
     ],
     image: '/src/assets/images/project_editorial_type_1791181062088.jpg',
     category: 'generative',
-    categoryLabel: 'Generative Typography',
+    categoryLabel: 'Miscellaneous',
     specifications: [
       { label: 'Substrate', value: 'Hahnemühle Photo Rag Ultra Smooth' },
       { label: 'Resolution', value: 'Mathematical infinite Bézier vectors' },
@@ -145,7 +145,7 @@ export const ARTWORKS: Artwork[] = [
     ],
     image: '/src/assets/images/project_fintech_os_1791181052919.jpg',
     category: 'generative',
-    categoryLabel: 'Data Topology & Glass',
+    categoryLabel: 'Miscellaneous',
     specifications: [
       { label: 'Throughput', value: '1,200,000 algorithmic ticks/min' },
       { label: 'Glass', value: 'Low-iron optical glass with 80% tint' },
@@ -171,13 +171,121 @@ export const ARTWORKS: Artwork[] = [
       'Mori Art Museum, Tokyo, 2022'
     ],
     image: '/src/assets/images/project_robotics_ai_1791181072298.jpg',
-    category: 'kinetics',
-    categoryLabel: 'Robotic Sculpture',
+    category: 'generative',
+    categoryLabel: 'Miscellaneous',
     specifications: [
       { label: 'Scan Density', value: '500,000 points/second' },
       { label: 'Kinematics', value: '6-Degrees-of-Freedom arm' },
       { label: 'Repeatability', value: '±0.02 mm positional tolerance' },
       { label: 'Interaction', value: 'Continuous non-invasive spatial tracking' }
+    ]
+  },
+  {
+    id: 'obsidian-resonance',
+    catalogNumber: 'CAT. Nº 07',
+    accessionNumber: 'ACC. 2026.014',
+    title: 'Obsidian Resonance: Kinetic Refraction',
+    subtitle: 'Polished volcanic basalt monolith, optical borosilicate prisms, and sub-audible vibration',
+    year: '2026',
+    medium: 'Volcanic obsidian basalt, optical BK7 glass prisms, balanced harmonic vibrator, directional illumination',
+    dimensions: '220 × 75 × 45 cm (86.6 × 29.5 × 17.7 in)',
+    edition: 'Edition of 3 + 1 Artist Proof',
+    provenance: 'Acquired by Tokyo Museum of Contemporary Fine Arts (2026); Private Collection, Seoul',
+    curatorialStatement: 'Obsidian Resonance investigates the intersection of geological antiquity and precision photonics. Light entering the hand-polished basalt aperture is refracted through triple-ground quartz lenses into crystalline polychromatic frequencies that trace micro-vibrations across the gallery.',
+    exhibitionHistory: [
+      'Tokyo Museum of Contemporary Fine Arts, "New Mineral Monumentalism", 2026',
+      'Venice Art Biennale, Arsenale Pavilion, 2026',
+      'Art Basel Hong Kong, Feature Presentations, 2026'
+    ],
+    image: '/src/assets/images/artwork_obsidian_resonance_1791272276250.jpg',
+    category: 'sculpture',
+    categoryLabel: 'Illustrations',
+    specifications: [
+      { label: 'Material', value: 'Armenian hand-quarried black obsidian' },
+      { label: 'Optics', value: 'BK7 optical borosilicate prism assembly' },
+      { label: 'Resonance', value: 'Sub-bass transducer (28 Hz fundamental)' },
+      { label: 'Pedestal', value: 'Brushed dark patinated titanium plinth' }
+    ]
+  },
+  {
+    id: 'nocturne-cadmium',
+    catalogNumber: 'CAT. Nº 08',
+    accessionNumber: 'ACC. 2025.148',
+    title: 'Nocturne in Cadmium: Impasto & Raw Dispersion',
+    subtitle: 'Natural vermillion pigment, Florentine gold leaf, and gestural oil on Belgian linen',
+    year: '2025',
+    medium: 'Mineral cinnabar, cadmium red pigment, burnt raw umber, 24k gold leaf, gesso on archival Belgian linen',
+    dimensions: '195 × 160 cm (76.8 × 63 in)',
+    edition: 'Unique original masterwork',
+    provenance: 'Commissioned for Collection d’Art Contemporain, Paris; Galerie Vaneau Exhibition 2025',
+    curatorialStatement: 'A visceral dialogue between intense crimson pigment density and delicate golden calligraphic fractures. Raw oil-suspended cinnabar is layered with heavy palette knife gestures over mathematical underpaintings, capturing tension between computational order and organic human touch.',
+    exhibitionHistory: [
+      'Grand Palais Éphémère, Art Paris, 2025',
+      'Galerie Vaneau, "Chroma & Flesh", Paris, 2025',
+      'Palais de Tokyo, Benefit Auction Exhibition, 2025'
+    ],
+    image: '/src/assets/images/artwork_nocturne_pigment_1791272296935.jpg',
+    category: 'painting',
+    categoryLabel: 'Membership Posts',
+    specifications: [
+      { label: 'Substrate', value: '550 gsm Claessens double-primed linen' },
+      { label: 'Gilding', value: 'Water-gilded 24k Florentine leaf' },
+      { label: 'Binder', value: 'Cold-pressed cold-aged Swedish linseed oil' },
+      { label: 'Varnish', value: 'Removable dammar and beeswax protective film' }
+    ]
+  },
+  {
+    id: 'chrono-spatial-labyrinth',
+    catalogNumber: 'CAT. Nº 09',
+    accessionNumber: 'ACC. 2025.182',
+    title: 'Chrono-Spatial Labyrinth: Volumetric Field',
+    subtitle: 'Volumetric laser architecture and multichannel spatial frequency synthesis',
+    year: '2025',
+    medium: 'Solid-state coherent laser emitter, aerosolized microscopic mineral vapor, 32-channel spatialized ambisonic soundwork',
+    dimensions: 'Site-specific architectural installation, variable room scale',
+    edition: 'Unique institutional installation',
+    provenance: 'Collection of the Center for Contemporary Sound Architecture, Berlin (Inv. CCSA-2025-018)',
+    curatorialStatement: 'A spatial light chamber where coherent laser ribbons slice through micro-misted atmospheric vapor. Sound frequencies vibrate the perceived position of geometric light planes, transforming physical architecture into an interactive acoustic labyrinth.',
+    exhibitionHistory: [
+      'Berlin Biennale for Contemporary Art, 2025',
+      'Ars Electronica Center, Deep Space 8K, Linz, 2025',
+      'Sonar+D Innovation Showcase, Barcelona, 2024'
+    ],
+    image: '/src/assets/images/artwork_chrono_spatial_1791272311526.jpg',
+    category: 'spatial',
+    categoryLabel: 'News and Blogs',
+    specifications: [
+      { label: 'Wavelength', value: '638 nm red & 577 nm yellow coherent beam' },
+      { label: 'Spatialization', value: '32.4 Ambisonics spatial field array' },
+      { label: 'Control', value: 'Real-time TouchDesigner GLSL pipeline' },
+      { label: 'Acoustics', value: 'Custom tuned tuned-mass acoustic dampers' }
+    ]
+  },
+  {
+    id: 'latent-codex-unseen',
+    catalogNumber: 'CAT. Nº 10',
+    accessionNumber: 'ACC. 2024.119',
+    title: 'Codex of the Unseen: Procedural Typographic Plate',
+    subtitle: 'Algorithmic geometric glyph matrix debossed on handmade washi with crimson seal',
+    year: '2024',
+    medium: 'Vector Bézier font engine, relief intaglio blind debossing, Japanese handmade Echizen washi paper, natural cinnabar seal',
+    dimensions: '140 × 100 cm (55.1 × 39.4 in)',
+    edition: 'Edition of 7 + 2 AP',
+    provenance: 'Special Collections, Bibliothèque Nationale de France, Paris; Collection of Graphic Art, Basel',
+    curatorialStatement: 'An archival typographic study deconstructing the sacred geometry of the glyph. Using generative grammar matrices, letterforms evolve into monumental architectural runes debossed onto fibrous plant-based washi paper stamped with a traditional crimson atelier lacquer seal.',
+    exhibitionHistory: [
+      'Bibliothèque Nationale de France, Paris, 2025',
+      'Basel Art Print Fair, Basel, 2024',
+      'Gutenberg Museum Special Showcase, Mainz, 2024'
+    ],
+    image: '/src/assets/images/artwork_latent_codex_1791272326366.jpg',
+    category: 'generative',
+    categoryLabel: 'Miscellaneous',
+    specifications: [
+      { label: 'Paper', value: 'Handmade raw Echizen kozo washi (280 gsm)' },
+      { label: 'Print Method', value: 'Hand-operated Albion relief proofing press' },
+      { label: 'Seal', value: 'Vermillion cinnabar paste studio hallmark' },
+      { label: 'Conservation', value: 'Acid-free UV-protective museum rag mounting' }
     ]
   }
 ];
